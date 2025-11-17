@@ -10,6 +10,9 @@ Command-line interface for the Amplifier AI-powered modular development platform
 
 ```bash
 # Try without installing
+uvx --from git+https://github.com/payneio/amplifier-amp-cli@payne amplifier
+
+# Upstream
 uvx --from git+https://github.com/microsoft/amplifier@next amplifier
 
 # Install globally
