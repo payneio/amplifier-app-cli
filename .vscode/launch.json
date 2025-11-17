@@ -1,0 +1,40 @@
+{
+  "configurations": [
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch Amplifier CLI",
+      "module": "amplifier_app_cli",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Launch Amplifier with Args",
+      "module": "amplifier_app_cli",
+      "args": "${input:cliArgs}",
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "debugpy",
+      "request": "launch",
+      "name": "Run Amplifier Tests",
+      "module": "pytest",
+      "args": [
+        "tests/",
+        "-v"
+      ],
+      "justMyCode": false,
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "cliArgs",
+      "description": "Enter CLI arguments (e.g., 'run \"your prompt\"' or 'profile list')"
+    }
+  ]
+}
