@@ -213,10 +213,14 @@ def register_run_command(
                 orchestrator_cfg["config"] = orchestrator_config
             elif isinstance(orchestrator_cfg, str):
                 # Convert shorthand into dict form with default provider hint
-                session_cfg["orchestrator"] = {
+                # Preserve orchestrator_source if present
+                orchestrator_dict = {
                     "module": orchestrator_cfg,
                     "config": {"default_provider": provider_module},
                 }
+                if "orchestrator_source" in session_cfg:
+                    orchestrator_dict["source"] = session_cfg["orchestrator_source"]
+                session_cfg["orchestrator"] = orchestrator_dict
 
             orchestrator_meta = config_data.setdefault("orchestrator", {})
             if isinstance(orchestrator_meta, dict):
