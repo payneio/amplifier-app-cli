@@ -397,17 +397,44 @@ async def spawn_sub_session(
     # PHASE 2: Create Inline Bundle from Merged Config
     # =========================================================================
     # spawn_bundle() requires a Bundle object. We create an inline bundle from
-    # the merged config dict. This is equivalent to calling bundle.prepare()
-    # with the config directly.
+    # the merged config dict with individual attributes (not mount_plan).
+    # The bundle's instruction enables @mention resolution in spawned sessions.
 
     from amplifier_foundation.bundle import Bundle
+
+    # Extract agent instruction for the bundle
+    agent_instruction = agent_config.get("instruction") or agent_config.get(
+        "system", {}
+    ).get("instruction")
+
+    # Extract agent context files as dict[str, Path]
+    agent_context_config = agent_config.get("context", {})
+    context_dict: dict[str, Path] = {}
+    if isinstance(agent_context_config, dict):
+        for ctx_name, path_str in agent_context_config.items():
+            context_dict[ctx_name] = Path(path_str)
+    elif isinstance(agent_context_config, list):
+        # List format: use filename as key
+        for ctx in agent_context_config:
+            if isinstance(ctx, str):
+                path = Path(ctx)
+                context_dict[path.stem] = path
+            elif isinstance(ctx, dict):
+                path_str = ctx.get("file") or ctx.get("path")
+                if path_str:
+                    path = Path(path_str)
+                    context_dict[ctx.get("name", path.stem)] = path
 
     inline_bundle = Bundle(
         name=agent_name,
         version="1.0.0",
-        mount_plan=merged_config,
+        session=merged_config.get("session", {}),
+        providers=merged_config.get("providers", []),
+        tools=merged_config.get("tools", []),
+        hooks=merged_config.get("hooks", []),
+        instruction=agent_instruction,
         agents={},  # Agents are resolved at CLI layer, not bundle layer
-        context_files=[],
+        context=context_dict,
     )
 
     # =========================================================================
@@ -522,16 +549,10 @@ async def spawn_sub_session(
     }
 
     # =========================================================================
-    # PHASE 6: Extract System Instruction
+    # PHASE 6: Spawn Using Foundation Primitive
     # =========================================================================
-
-    system_instruction = agent_config.get("instruction") or agent_config.get(
-        "system", {}
-    ).get("instruction")
-
-    # =========================================================================
-    # PHASE 7: Spawn Using Foundation Primitive
-    # =========================================================================
+    # Note: System instruction is now in inline_bundle.instruction, which
+    # spawn_bundle() processes via system prompt factory for @mention resolution.
 
     from amplifier_foundation.spawn import spawn_bundle
 
@@ -552,7 +573,6 @@ async def spawn_sub_session(
             # Persistence
             session_storage=SessionStore(),
             # Additional setup
-            system_instruction=system_instruction,
             pre_execute_hook=cli_pre_execute_hook,
             metadata_extra=metadata_extra,
         )
